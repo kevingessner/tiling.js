@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Tiling.js</title>
+    </head>
+    <body>
+        <canvas id="output" width="800" height="800"></canvas>
+        <script src="http://requirejs.org/docs/release/2.1.14/comments/require.js"></script>
+        <script src="tiling.js"></script>
+        <script>
+            require(['tiling'], function(tiling) {
+                var canvas = document.querySelector('#output');
+                var model = new tiling.Model();
+                var i = model.append(new tiling.Shape(6));
+                i = model.addAll([i], [0, 1, 2, 3, 4, 5], 4);
+                model.addAll(i, [1], 3);
+                model.render(canvas);
+            });
+        </script>
+    </body>
+</html>
