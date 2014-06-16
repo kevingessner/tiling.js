@@ -20,6 +20,9 @@
         this.y = y || 0;
         this.rotation = rotation || 0;
     };
+    Shape.prototype.copy = function(x, y) {
+        return new Shape(this.sides, x, y, this.rotation);
+    };
     Shape.prototype.points = function(margin) {
         margin = margin || 0;
         var angle = (2 * Math.PI) / this.sides;
@@ -72,10 +75,13 @@
     };
 
     function coordsToKey(x, y) {
-        return Math.round(x, 6) + ':' + Math.round(y, 6);
+        return x.toFixed(6) + ':' + y.toFixed(6);
     };
 
-    function Model() {
+    function Model(canvas) {
+        this.canvas = canvas;
+        this.width = canvas.width;
+        this.height = canvas.height;
         this.shapes = [];
         this.lookup = {};
     };
@@ -99,19 +105,63 @@
         });
         return addedIndexes;
     };
+    Model.prototype.repeat = function(indexes) {
+        var depth = 0;
+        var memo = {};
+        var done = {};
+        do {
+            this._repeat(indexes, 0, 0, depth, memo, done);
+            depth++;
+        } while(!(done.tl && done.tr && done.bl && done.br));
+    };
+    Model.prototype.addRepeats = function(x, y) {
+        var self = this;
+        this.shapes.forEach(function(shape) {
+            var newX = x + shape.x;
+            var newY = y + shape.y;
+            var key = coordsToKey(newX, newY);
+            if (self.lookup[key]) return;
+            self.lookup[key] = shape.copy(newX, newY);
+        });
+    };
+    Model.prototype._repeat = function(indexes, x, y, depth, memo, done) {
+        if (depth < 0) {
+            return;
+        }
+        var maxX = this.width / 2 / SCALE;
+        var maxY = this.height / 2 / SCALE;
+        if ((x < -maxX && y < -maxY)) done.tl = true;
+        if ((x < -maxX && y > maxY)) done.bl = true;
+        if ((x > maxX && y > maxY)) done.br = true;
+        if ((x > maxX && y < -maxY)) done.tr = true;
 
-    Model.prototype.render = function(canvas) {
-        var context = canvas.getContext('2d');
-        var w = canvas.width;
-        var h = canvas.height;
+        var key = coordsToKey(x, y);
+        var previousDepth = memo[key] || -1;
+        if (previousDepth >= depth) {
+            return;
+        }
+        memo[key] = depth;
+        if (previousDepth == -1) {
+            this.addRepeats(x, y);
+        }
+        var self = this;
+        indexes.forEach(function(index) {
+            var shape = self.shapes[index];
+            self._repeat(indexes, x + shape.x, y + shape.y, depth - 1, memo, done);
+        });
+    };
+
+    Model.prototype.render = function() {
+        var context = this.canvas.getContext('2d');
         context.lineCap = 'round';
         context.lineJoin = 'round';
-        context.translate(w / 2, h / 2);
+        context.translate(this.width / 2, this.height / 2);
         context.scale(SCALE, SCALE);
         context.fillStyle = BG_COLOR;
-        context.fillRect(-w / 2, -h / 2, w, h);
-        this.shapes.forEach(function(shape) {
-            shape.render(context);
+        context.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        var self = this;
+        Object.keys(this.lookup).forEach(function(k) {
+            self.lookup[k].render(context);
         });
     };
 

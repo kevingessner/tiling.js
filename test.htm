@@ -10,11 +10,46 @@
         <script>
             require(['tiling'], function(tiling) {
                 var canvas = document.querySelector('#output');
-                var model = new tiling.Model();
-                var i = model.append(new tiling.Shape(6));
-                i = model.addAll([i], [0, 1, 2, 3, 4, 5], 4);
-                model.addAll(i, [1], 3);
-                model.render(canvas);
+
+                function range(start, end, step) {
+                    step = step || 1;
+                    var ret = [];
+                    for (var i = start; i < end; i += step) ret.push(i);
+                    return ret;
+                };
+
+                function test1() {
+                    var model = new tiling.Model(canvas);
+                    var i = model.append(new tiling.Shape(6));
+                    i = model.addAll([i], range(0, 6), 4);
+                    model.addAll(i, [1], 3);
+                    i = model.addAll(i, [2], 6);
+                    model.repeat(i);
+                    model.render();
+                }
+
+                function test2() {
+                    var model = new tiling.Model(canvas);
+                    model.append(new tiling.Shape(12))
+                    a = model.addAll([0], range(0, 12, 2), 6)
+                    b = model.addAll([0], range(1, 12, 2), 4)
+                    c = model.addAll(b, [2], 12)
+                    model.repeat(c)
+                    model.render();
+                }
+
+                function test3() {
+                    var model = new tiling.Model(canvas);
+                    model.append(new tiling.Shape(4))
+                    a = model.addAll([0], range(0, 4), 3)
+                    b = model.addAll(a, [1], 4)
+                    c = model.addAll(b, [2, 3], 3)
+                    d = model.addAll(c, [2], 4);
+                    model.repeat(d)
+                    model.render();
+                }
+
+                test3();
             });
         </script>
     </body>
