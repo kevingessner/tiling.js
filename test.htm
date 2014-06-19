@@ -4,12 +4,15 @@
         <title>Tiling.js</title>
     </head>
     <body>
-        <canvas id="output" width="800" height="800"></canvas>
+        <p data-bind="foreach: tests">
+            <input type="button" value="Test 1" data-bind="click: $root.setCurrentTest, attr: { value: name }" />
+        </p>
+        <canvas id="output" width="1200" height="800"></canvas>
+
         <script src="http://requirejs.org/docs/release/2.1.14/comments/require.js"></script>
         <script src="tiling.js"></script>
         <script>
-            require(['tiling'], function(tiling) {
-                var canvas = document.querySelector('#output');
+            require(['tiling', 'http://knockoutjs.com/downloads/knockout-3.1.0.js'], function(tiling, ko) {
 
                 function range(start, end, step) {
                     step = step || 1;
@@ -18,38 +21,205 @@
                     return ret;
                 };
 
-                function test1() {
+                function render(def) {
+                    var canvas = document.querySelector('#output');
                     var model = new tiling.Model(canvas);
-                    var i = model.append(new tiling.Shape(6));
-                    i = model.addAll([i], range(0, 6), 4);
-                    model.addAll(i, [1], 3);
-                    i = model.addAll(i, [2], 6);
-                    model.repeat(i);
+                    var indexes = {};
+                    def.forEach(function(d) {
+                        var addedIndexes;
+                        if (d.from) {
+                            addedIndexes = model.addAll(indexes[d.from], d.edges, d.sides);
+                        } else {
+                            addedIndexes = [model.append(new tiling.Shape(d.sides))];
+                        }
+                        if (d.repeat) {
+                            model.repeat(addedIndexes);
+                        }
+                        if (d.name) {
+                            indexes[d.name] = addedIndexes;
+                        }
+                    });
                     model.render();
                 }
 
-                function test2() {
-                    var model = new tiling.Model(canvas);
-                    model.append(new tiling.Shape(12))
-                    a = model.addAll([0], range(0, 12, 2), 6)
-                    b = model.addAll([0], range(1, 12, 2), 4)
-                    c = model.addAll(b, [2], 12)
-                    model.repeat(c)
-                    model.render();
-                }
+                var tests = [
+                    {
+                        name: '3.4.6.4',
+                        data: [
+                            {
+                                sides: 6,
+                                name: 'a'
+                            },
+                            {
+                                sides: 4,
+                                edges: range(0, 6),
+                                from: 'a',
+                                name: 'b'
+                            },
+                            {
+                                sides: 3,
+                                edges: [1],
+                                from: 'b'
+                            },
+                            {
+                                sides: 6,
+                                edges: [2],
+                                from: 'b',
+                                repeat: true
+                            }
+                        ]
+                    },
+                    {
+                        name: '4.6.12',
+                        data: [
+                            {
+                                sides: 12,
+                                name: 'a'
+                            },
+                            {
+                                from: 'a',
+                                edges: range(0, 12, 2),
+                                sides: 6
+                            },
+                            {
+                                from: 'a',
+                                edges: range(1, 12, 2),
+                                sides: 4,
+                                name: 'b'
+                            },
+                            {
+                                from: 'b',
+                                edges: [2],
+                                sides: 12,
+                                repeat: true
+                            }
+                        ]
+                    },
+                    {
+                        name: '3.3.4.3.4',
+                        data: [
+                            {
+                                name: '0',
+                                sides: 4
+                            },
+                            {
+                                name: 'a',
+                                from: '0',
+                                edges: range(0, 4),
+                                sides: 3,
+                            },
+                            {
+                                name: 'b',
+                                from: 'a',
+                                edges: [1],
+                                sides: 4
+                            },
+                            {
+                                name: 'c',
+                                from: 'b',
+                                edges: [2, 3],
+                                sides: 3,
+                            },
+                            {
+                                name: 'd',
+                                from: 'c',
+                                edges: [2],
+                                sides: 4,
+                                repeat: true
+                            }
+                        ]
+                    },
+                    {
+                        name: '3.6.3.6',
+                        data: [
+                            {
+                                name: 'a',
+                                sides: 6
+                            },
+                            {
+                                name: 'b',
+                                from: 'a',
+                                sides: 3,
+                                edges: range(0, 6)
+                            },
+                            {
+                                name: 'c',
+                                from: 'b',
+                                sides: 6,
+                                edges: [1],
+                                repeat: true
+                            }
+                        ]
+                    },
+                    {
+                        name: '4.8.8',
+                        data: [
+                            {
+                                name: 'a',
+                                sides: 8
+                            },
+                            {
+                                name: 'b',
+                                from: 'a',
+                                sides: 4,
+                                edges: range(1, 8, 2)
+                            },
+                            {
+                                from: 'b',
+                                sides: 8,
+                                edges: [1],
+                                repeat: true
+                            },
+                        ]
+                    },
+                    {
+                        name: '3.3.3.3.6',
+                        data: [
+                            {
+                                name: 'a',
+                                sides: 6
+                            },
+                            {
+                                name: 'b',
+                                from: 'a',
+                                sides: 3,
+                                edges: range(0, 6)
+                            },
+                            {
+                                name: 'c',
+                                from: 'b',
+                                sides: 3,
+                                edges: [1]
+                            },
+                            {
+                                name: 'd',
+                                from: 'b',
+                                sides: 3,
+                                edges: [2]
+                            },
+                            {
+                                name: 'e',
+                                from: 'd',
+                                sides: 6,
+                                edges: [1],
+                                repeat: true,
+                            },
+                        ]
+                    }
+                ];
 
-                function test3() {
-                    var model = new tiling.Model(canvas);
-                    model.append(new tiling.Shape(4))
-                    a = model.addAll([0], range(0, 4), 3)
-                    b = model.addAll(a, [1], 4)
-                    c = model.addAll(b, [2, 3], 3)
-                    d = model.addAll(c, [2], 4);
-                    model.repeat(d)
-                    model.render();
-                }
-
-                test3();
+                var setCurrentTest = function(test) {
+                    model.currentTest(test);
+                };
+                var model = {
+                    tests: tests,
+                    setCurrentTest: setCurrentTest,
+                    currentTest: ko.observable(tests[0])
+                };
+                model.currentTest.subscribe(function(newValue) {
+                    render(newValue.data);
+                });
+                ko.applyBindings(model);
             });
         </script>
     </body>

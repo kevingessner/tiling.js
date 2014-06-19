@@ -153,6 +153,7 @@
 
     Model.prototype.render = function() {
         var context = this.canvas.getContext('2d');
+        context.save();
         context.lineCap = 'round';
         context.lineJoin = 'round';
         context.translate(this.width / 2, this.height / 2);
@@ -163,6 +164,7 @@
         Object.keys(this.lookup).forEach(function(k) {
             self.lookup[k].render(context);
         });
+        context.restore();
     };
 
     return {
