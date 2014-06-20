@@ -7,6 +7,8 @@
         <p data-bind="foreach: tests">
             <input type="button" value="Test 1" data-bind="click: $root.setCurrentTest, attr: { value: name }" />
         </p>
+        <p><input data-bind="checked: renderDual" type="checkbox" id="dual" /><label for="dual">Render dual</label></p>
+
         <canvas id="output" width="1200" height="800"></canvas>
 
         <script src="http://requirejs.org/docs/release/2.1.14/comments/require.js"></script>
@@ -21,7 +23,7 @@
                     return ret;
                 };
 
-                function render(def) {
+                function render(def, dual) {
                     var canvas = document.querySelector('#output');
                     var model = new tiling.Model(canvas);
                     var indexes = {};
@@ -39,7 +41,7 @@
                             indexes[d.name] = addedIndexes;
                         }
                     });
-                    model.render();
+                    model.render(dual);
                 }
 
                 var tests = [
@@ -214,10 +216,14 @@
                 var model = {
                     tests: tests,
                     setCurrentTest: setCurrentTest,
-                    currentTest: ko.observable(tests[0])
+                    currentTest: ko.observable(tests[0]),
+                    renderDual: ko.observable(false)
                 };
                 model.currentTest.subscribe(function(newValue) {
-                    render(newValue.data);
+                    render(newValue.data, model.renderDual());
+                });
+                model.renderDual.subscribe(function(newValue) {
+                    render(model.currentTest().data, newValue);
                 });
                 ko.applyBindings(model);
             });

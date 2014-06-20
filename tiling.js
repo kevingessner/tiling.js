@@ -60,6 +60,10 @@
     };
     Shape.prototype.render = function(context) {
         var points = this.points(MARGIN);
+        renderPoints(points, context);
+    };
+
+    function renderPoints(points, context) {
         context.beginPath();
         context.moveTo(points[0].x, points[0].y);
         points.forEach(function(point, i) {
@@ -74,8 +78,19 @@
         context.stroke();
     };
 
+    var DualShape = function(points) {
+        this.points = points;
+    };
+    DualShape.prototype.render = function(context) {
+        renderPoints(this.points, context);
+    };
+
+    function fixed(n) {
+        var f = n.toFixed(6);
+        return f == "-0.000000" ? "0.000000" : f;
+    }
     function coordsToKey(x, y) {
-        return x.toFixed(6) + ':' + y.toFixed(6);
+        return fixed(x) + ':' + fixed(y);
     };
 
     function Model(canvas) {
@@ -150,8 +165,45 @@
             self._repeat(indexes, x + shape.x, y + shape.y, depth - 1, memo, done);
         });
     };
+    Model.prototype.dualShapes = function() {
+        var vertices = {};
+        var lookup = this.lookup;
+        console.log(lookup);
+        Object.keys(lookup).forEach(function(k) {
+            var shape = lookup[k];
+            var points = shape.points();
+            points.slice(0, -1).forEach(function(p) {
+                var x = fixed(p.x);
+                var y = fixed(p.y);
+                if (!vertices[x]) vertices[x] = {};
+                if (!vertices[x][y]) vertices[x][y] = [];
+                vertices[x][y].push(shape);
+            });
+        });
+        var result = [];
+        Object.keys(vertices).forEach(function(x) {
+            Object.keys(vertices[x]).forEach(function(y) {
+                var shapes = vertices[x][y];
+                if (shapes.length < 3) {
+                    return;
+                }
+                var angle = function(shape) {
+                    return Math.atan2(shape.y - y, shape.x - x);
+                };
+                shapes.sort(function(a, b) {
+                    return angle(b) - angle(a);
+                });
+                var points = shapes.map(function(s) {
+                    return { x: s.x, y: s.y };
+                });
+                points.push(points[0]);
+                result.push(new DualShape(points));
+            });
+        });
+        return result;
+    };
 
-    Model.prototype.render = function() {
+    Model.prototype.render = function(dual) {
         var context = this.canvas.getContext('2d');
         context.save();
         context.lineCap = 'round';
@@ -161,9 +213,15 @@
         context.fillStyle = BG_COLOR;
         context.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
         var self = this;
-        Object.keys(this.lookup).forEach(function(k) {
-            self.lookup[k].render(context);
-        });
+        if (dual) {
+            this.dualShapes().forEach(function(shape) {
+                shape.render(context);
+            });
+        } else {
+            Object.keys(this.lookup).forEach(function(k) {
+                self.lookup[k].render(context);
+            });
+        }
         context.restore();
     };
 
